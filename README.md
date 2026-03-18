@@ -1,33 +1,58 @@
-# rd-auth-server
+# keycloak-kickstart
 
-Identity provider basato su Keycloak 26.0. Gestisce autenticazione OpenID Connect / OAuth2, realm, utenti, ruoli e client.
+Opinionated Keycloak setup with automated realm initialization. Clone, configure, `docker compose up`.
 
-## Container
+## Quickstart
 
-| Container | Scopo |
+```bash
+cp .env.example .env                    # edit credentials
+cp init/seeds/example.yml seed.yml      # edit realm/clients/users
+docker compose up
+```
+
+Keycloak will be available at `http://localhost:8080/auth` (or the port set in `.env`).
+
+## Seed File
+
+The init container reads a YAML seed file to configure Keycloak on first boot. Copy `init/seeds/example.yml` to `seed.yml` at the project root and customize it.
+
+The seed supports environment variable interpolation:
+
+- `${VAR}` — required, error if missing
+- `${VAR:-default}` — optional, uses default if missing
+
+See `init/seeds/example.yml` for all supported fields: realms, clients, roles, groups, users, SMTP, webhooks, user attributes, logout configuration, and admin password reset.
+
+## Custom Theme
+
+This kickstart does not include a custom theme. To add one:
+
+1. Create your theme under `themes/<name>/login/` following the [Keycloak theme documentation](https://www.keycloak.org/docs/latest/server_development/#_themes)
+2. Add to `Dockerfile` before the `RUN` build step:
+   ```dockerfile
+   COPY ./themes/<name>/ /opt/keycloak/themes/<name>/
+   ```
+3. Set `theme: <name>` in your `seed.yml`
+
+## Events & Webhooks
+
+The image includes `keycloak-events-26.0.jar`, a provider that enables webhook notifications for Keycloak events. Configure webhooks in your seed file:
+
+```yaml
+webhooks:
+  - url: "http://your-service/webhook"
+    events:
+      - access.LOGIN
+      - access.LOGOUT
+      - admin.USER-DELETE
+```
+
+When webhooks are defined, the init container automatically enables event listeners and admin events for the realm.
+
+## Architecture
+
+| Service | Description |
 |---|---|
-| `rd-auth-server` | Keycloak principale |
-| `rd-auth-server-init` | Inizializzazione one-shot (crea realm, utenti, client, ruoli, webhook) |
-| `rd-auth-db` | PostgreSQL dedicato a Keycloak |
-
-## File
-
-| File | Descrizione |
-|---|---|
-| `Dockerfile` | Immagine Keycloak con provider custom e tema |
-| `Dockerfile.initializer` | Immagine Python per lo script di inizializzazione |
-| `initKC_file.py` | Script che configura realm, utenti, client, ruoli, webhook, SMTP e tema |
-| `requirements.txt` | Dipendenze Python (requests) |
-| `provider/keycloak-events-26.0.jar` | Provider custom per eventi webhook |
-| `themes/` | Temi login personalizzabili (selezionabile via parametro `kc_theme`) |
-
-## Temi
-
-I temi si trovano in `themes/<nome>/login/`. Il tema attivo e' configurabile con la variabile Ansible `kc_theme` (default: `default`).
-
-Per aggiungere un nuovo tema, creare una sottocartella in `themes/` con la stessa struttura di `default/`.
-
-## Porte
-
-- `8080` interno (esposto come `9999` solo in modalita' infra)
-- Accessibile esternamente via gateway su `/auth/`
+| `keycloak` | Keycloak 26.1 with custom event provider |
+| `keycloak-db` | PostgreSQL 16 for Keycloak storage |
+| `keycloak-init` | Python one-shot container that configures realms from `seed.yml` |
