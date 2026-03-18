@@ -1,4 +1,3 @@
-# rd-auth-server/init/tests/test_init.py
 import pytest
 from unittest.mock import MagicMock, patch, call
 import tempfile
@@ -27,7 +26,6 @@ class TestInitOrchestrator:
         cfg.ensure_client.return_value = "client-uuid"
         cfg.ensure_group.return_value = "group-uuid"
         cfg.ensure_user.return_value = "user-uuid"
-        cfg.ensure_client_scope.return_value = "scope-uuid"
 
         mock_load.return_value = {
             "realms": [{
@@ -39,7 +37,6 @@ class TestInitOrchestrator:
                     "clientId": "app",
                     "app_url": "http://localhost",
                     "roles": ["Admin"],
-                    "scope": {"name": "role", "mapper": "client-role-mapper"},
                     "backchannel_logout_url": "http://api/logout",
                     "disable_frontchannel_logout": True,
                 }],
@@ -58,8 +55,6 @@ class TestInitOrchestrator:
         cfg.ensure_realm.assert_called_once_with("test")
         cfg.ensure_client.assert_called_once()
         cfg.ensure_role.assert_called_once_with("test", "client-uuid", "Admin")
-        cfg.ensure_client_scope.assert_called_once_with("test", "role")
-        cfg.create_scope_mapper.assert_called_once()
         cfg.ensure_group.assert_called_once_with("test", "devs")
         cfg.ensure_user.assert_called_once()
         cfg.assign_role_to_user.assert_called_once()
