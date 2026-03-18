@@ -1,4 +1,3 @@
-# rd-auth-server/init/orchestrator.py
 """Keycloak init orchestrator — reads seed, configures KC idempotently."""
 
 import logging
@@ -38,7 +37,7 @@ def wait_for_keycloak(url: str, timeout: int = 300) -> None:
 
 def main() -> None:
     seed_file = os.environ.get("SEED_FILE", "/app/seed.yml")
-    kc_url = os.environ.get("KC_URL", "http://rd-auth-server:8080/auth")
+    kc_url = os.environ.get("KC_URL", "http://keycloak:8080/auth")
     kc_admin_user = os.environ.get("KC_ADMIN_USER", "admin")
     kc_admin_password = os.environ.get("KC_ADMIN_PASSWORD")
     kc_timeout = int(os.environ.get("KC_HEALTHCHECK_TIMEOUT", "300"))
