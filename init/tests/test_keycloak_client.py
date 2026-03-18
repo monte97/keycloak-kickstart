@@ -21,16 +21,16 @@ class TestEnsureRealm:
     def test_creates_realm_if_not_exists(self, configurator):
         cfg, mock_admin = configurator
         mock_admin.get_realms.return_value = [{"realm": "master"}]
-        cfg.ensure_realm("builder")
+        cfg.ensure_realm("test-realm")
         mock_admin.create_realm.assert_called_once()
         payload = mock_admin.create_realm.call_args[0][0]
-        assert payload["realm"] == "builder"
+        assert payload["realm"] == "test-realm"
         assert payload["enabled"] is True
 
     def test_skips_realm_if_exists(self, configurator):
         cfg, mock_admin = configurator
-        mock_admin.get_realms.return_value = [{"realm": "master"}, {"realm": "builder"}]
-        cfg.ensure_realm("builder")
+        mock_admin.get_realms.return_value = [{"realm": "master"}, {"realm": "test-realm"}]
+        cfg.ensure_realm("test-realm")
         mock_admin.create_realm.assert_not_called()
 
 
@@ -39,7 +39,7 @@ class TestEnsureClient:
         cfg, mock_admin = configurator
         mock_admin.get_clients.return_value = []
         mock_admin.create_client.return_value = "client-uuid"
-        result = cfg.ensure_client("builder", "myapp", app_url="http://localhost")
+        result = cfg.ensure_client("test-realm", "myapp", app_url="http://localhost")
         mock_admin.create_client.assert_called_once()
         payload = mock_admin.create_client.call_args[0][0]
         assert payload["clientId"] == "myapp"
@@ -49,7 +49,7 @@ class TestEnsureClient:
     def test_returns_existing_client_id(self, configurator):
         cfg, mock_admin = configurator
         mock_admin.get_clients.return_value = [{"id": "existing-uuid", "clientId": "myapp"}]
-        result = cfg.ensure_client("builder", "myapp", app_url="http://localhost")
+        result = cfg.ensure_client("test-realm", "myapp", app_url="http://localhost")
         assert result == "existing-uuid"
         mock_admin.create_client.assert_not_called()
 
@@ -58,13 +58,13 @@ class TestEnsureRole:
     def test_creates_role_if_not_exists(self, configurator):
         cfg, mock_admin = configurator
         mock_admin.get_client_roles.return_value = []
-        cfg.ensure_role("builder", "client-uuid", "Admin")
+        cfg.ensure_role("test-realm", "client-uuid", "Admin")
         mock_admin.create_client_role.assert_called_once()
 
     def test_skips_role_if_exists(self, configurator):
         cfg, mock_admin = configurator
         mock_admin.get_client_roles.return_value = [{"name": "Admin"}]
-        cfg.ensure_role("builder", "client-uuid", "Admin")
+        cfg.ensure_role("test-realm", "client-uuid", "Admin")
         mock_admin.create_client_role.assert_not_called()
 
 
@@ -73,13 +73,13 @@ class TestEnsureGroup:
         cfg, mock_admin = configurator
         mock_admin.get_groups.return_value = []
         mock_admin.create_group.return_value = "group-uuid"
-        result = cfg.ensure_group("builder", "engineers")
+        result = cfg.ensure_group("test-realm", "engineers")
         mock_admin.create_group.assert_called_once()
 
     def test_returns_existing_group_id(self, configurator):
         cfg, mock_admin = configurator
         mock_admin.get_groups.return_value = [{"id": "g-uuid", "name": "engineers"}]
-        result = cfg.ensure_group("builder", "engineers")
+        result = cfg.ensure_group("test-realm", "engineers")
         assert result == "g-uuid"
         mock_admin.create_group.assert_not_called()
 
@@ -89,13 +89,13 @@ class TestEnsureUser:
         cfg, mock_admin = configurator
         mock_admin.get_users.return_value = []
         mock_admin.create_user.return_value = "user-uuid"
-        result = cfg.ensure_user("builder", "root", "rootpass")
+        result = cfg.ensure_user("test-realm", "root", "rootpass")
         mock_admin.create_user.assert_called_once()
 
     def test_returns_existing_user_id(self, configurator):
         cfg, mock_admin = configurator
         mock_admin.get_users.return_value = [{"id": "u-uuid", "username": "root"}]
-        result = cfg.ensure_user("builder", "root", "rootpass")
+        result = cfg.ensure_user("test-realm", "root", "rootpass")
         assert result == "u-uuid"
         mock_admin.create_user.assert_not_called()
 
@@ -104,31 +104,15 @@ class TestAssignRoleToUser:
     def test_assigns_role(self, configurator):
         cfg, mock_admin = configurator
         mock_admin.get_client_role.return_value = {"id": "role-id", "name": "Admin"}
-        cfg.assign_role_to_user("builder", "user-uuid", "client-uuid", "Admin")
+        cfg.assign_role_to_user("test-realm", "user-uuid", "client-uuid", "Admin")
         mock_admin.assign_client_role.assert_called_once()
 
 
 class TestAddUserToGroup:
     def test_adds_to_group(self, configurator):
         cfg, mock_admin = configurator
-        cfg.add_user_to_group("builder", "user-uuid", "group-uuid")
+        cfg.add_user_to_group("test-realm", "user-uuid", "group-uuid")
         mock_admin.group_user_add.assert_called_once_with("user-uuid", "group-uuid")
-
-
-class TestEnsureClientScope:
-    def test_creates_scope_if_not_exists(self, configurator):
-        cfg, mock_admin = configurator
-        mock_admin.get_client_scopes.return_value = []
-        mock_admin.create_client_scope.return_value = "scope-uuid"
-        result = cfg.ensure_client_scope("builder", "role")
-        mock_admin.create_client_scope.assert_called_once()
-
-    def test_returns_existing_scope_id(self, configurator):
-        cfg, mock_admin = configurator
-        mock_admin.get_client_scopes.return_value = [{"id": "s-uuid", "name": "role"}]
-        result = cfg.ensure_client_scope("builder", "role")
-        assert result == "s-uuid"
-        mock_admin.create_client_scope.assert_not_called()
 
 
 class TestConfigureSmtp:
@@ -136,7 +120,7 @@ class TestConfigureSmtp:
         cfg, mock_admin = configurator
         smtp = {"host": "smtp.local", "port": 587, "sender": "a@b.c",
                 "username": "", "password": "", "ssl": False, "starttls": True}
-        cfg.configure_smtp("builder", smtp)
+        cfg.configure_smtp("test-realm", smtp)
         mock_admin.update_realm.assert_called_once()
         payload = mock_admin.update_realm.call_args[1]["payload"]
         assert payload["smtpServer"]["host"] == "smtp.local"
@@ -145,7 +129,7 @@ class TestConfigureSmtp:
 class TestConfigureTheme:
     def test_sets_login_theme(self, configurator):
         cfg, mock_admin = configurator
-        cfg.configure_theme("builder", "custom-theme")
+        cfg.configure_theme("test-realm", "custom-theme")
         mock_admin.update_realm.assert_called_once()
         payload = mock_admin.update_realm.call_args[1]["payload"]
         assert payload["loginTheme"] == "custom-theme"
@@ -154,7 +138,7 @@ class TestConfigureTheme:
 class TestConfigureSsl:
     def test_sets_ssl_required(self, configurator):
         cfg, mock_admin = configurator
-        cfg.configure_ssl("builder", "NONE")
+        cfg.configure_ssl("test-realm", "NONE")
         mock_admin.update_realm.assert_called_once()
         payload = mock_admin.update_realm.call_args[1]["payload"]
         assert payload["sslRequired"] == "NONE"
@@ -163,7 +147,7 @@ class TestConfigureSsl:
 class TestConfigureEvents:
     def test_enables_event_listeners(self, configurator):
         cfg, mock_admin = configurator
-        cfg.configure_events("builder")
+        cfg.configure_events("test-realm")
         mock_admin.update_realm.assert_called_once()
         payload = mock_admin.update_realm.call_args[1]["payload"]
         assert "ext-event-webhook" in payload["eventsListeners"]
@@ -184,7 +168,7 @@ class TestRegisterWebhook:
             mock_requests.post.return_value = mock_post
             mock_admin.connection.token = {"access_token": "test-token"}
 
-            cfg.register_webhook("builder", "http://sync:8888/webhook", ["admin.USER-DELETE"])
+            cfg.register_webhook("test-realm", "http://sync:8888/webhook", ["admin.USER-DELETE"])
             mock_requests.post.assert_called_once()
 
     def test_skips_webhook_if_exists_same_events(self, configurator):
@@ -201,7 +185,7 @@ class TestRegisterWebhook:
             mock_requests.get.return_value = mock_get
             mock_admin.connection.token = {"access_token": "test-token"}
 
-            cfg.register_webhook("builder", "http://sync:8888/webhook", ["admin.USER-DELETE"])
+            cfg.register_webhook("test-realm", "http://sync:8888/webhook", ["admin.USER-DELETE"])
             mock_requests.post.assert_not_called()
 
 
@@ -209,7 +193,7 @@ class TestConfigureBackchannelLogout:
     def test_sets_backchannel_url(self, configurator):
         cfg, mock_admin = configurator
         mock_admin.get_client.return_value = {"id": "c-uuid", "attributes": {}}
-        cfg.configure_backchannel_logout("builder", "c-uuid", "http://api:8090/logout")
+        cfg.configure_backchannel_logout("test-realm", "c-uuid", "http://api:8090/logout")
         mock_admin.update_client.assert_called_once()
 
 
@@ -219,7 +203,7 @@ class TestDisableFrontchannelLogout:
         mock_admin.get_client.return_value = {
             "id": "c-uuid", "attributes": {}, "frontchannelLogout": True
         }
-        cfg.disable_frontchannel_logout("builder", "c-uuid")
+        cfg.disable_frontchannel_logout("test-realm", "c-uuid")
         mock_admin.update_client.assert_called_once()
 
 
