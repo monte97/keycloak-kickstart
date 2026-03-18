@@ -1,0 +1,55 @@
+realms:
+  - name: builder
+    theme: custom-theme
+    ssl_required: "NONE"
+
+    smtp:
+      host: "${KC_SMTP_HOST}"
+      port: "${KC_SMTP_PORT:-587}"
+      username: "${KC_SMTP_USERNAME}"
+      password: "${KC_SMTP_PASSWORD}"
+      ssl: "${KC_SMTP_ENABLE_SSL:-false}"
+      starttls: "${KC_SMTP_ENABLE_STARTTLS:-true}"
+      sender: "${KC_SMTP_SENDER}"
+
+    clients:
+      - clientId: "${KC_CLIENT:-builder}"
+        app_url: "${KC_FRONTEND_ENDPOINT}"
+        public_client: true
+        direct_access_grants: true
+        roles: [Root, Author, Runtime]
+        backchannel_logout_url: "${KC_LOGOUT_ENDPOINT_OVERRIDE:-http://rd-builder-api:8090}/api/public/builder/logout/session"
+        disable_frontchannel_logout: true
+
+    webhooks:
+      - url: "${KC_WEBHOOK_ENDPOINT}"
+        events: [access.LOGIN, access.LOGOUT]
+      - url: "${KC_SYNC_WEBHOOK_URL}"
+        events:
+          - admin.USER-DELETE
+          - admin.CLIENT_ROLE_MAPPING-CREATE
+          - admin.CLIENT_ROLE_MAPPING-DELETE
+          - admin.GROUP_MEMBERSHIP-CREATE
+          - admin.GROUP_MEMBERSHIP-DELETE
+
+    users:
+      - username: root
+        password: root
+        roles: [Root]
+      - username: author
+        password: author
+        roles: [Author]
+      - username: runtime
+        password: runtime
+        roles: [Runtime]
+
+    user_attributes:
+      - name: language
+        display_name: Language
+        permissions:
+          view: [admin, user]
+          edit: [admin, user]
+
+    admin:
+      reset_password: "${KC_PASSWORD}"
+      temporary: false
