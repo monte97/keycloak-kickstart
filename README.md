@@ -36,28 +36,46 @@ This kickstart does not include a custom theme. To add one:
 
 ## Events & Webhooks
 
-The image includes `keycloak-webhook-provider-1.0.0-SNAPSHOT.jar`, a custom SPI provider with HMAC-signed webhook delivery, retry with exponential backoff, circuit breaker, full REST API, and an embedded admin UI.
+The image includes [keycloak-webhook-provider](https://github.com/monte97/keycloak-webhook-provider), a custom SPI with HMAC-signed webhook delivery, retry with exponential backoff, circuit breaker, REST API, and an embedded admin UI.
 
-### Admin UI
+Configure webhooks in your seed file:
 
-```
-http://localhost:8080/auth/realms/{realm}/webhooks/ui
-```
-
-Create, edit, and delete webhooks, monitor circuit breaker state, and send test pings — all from the browser. Authentication uses the realm's Keycloak JS adapter.
-
-### REST API
-
-```
-http://localhost:8080/auth/realms/{realm}/webhooks
+```yaml
+webhooks:
+  - url: "http://your-service/webhook"
+    events:
+      - access.LOGIN
+      - access.LOGOUT
+      - admin.USER-DELETE
 ```
 
-Requires `view-events` / `manage-events` realm permissions. See `docs/PROJECT_STATUS.md` for the full endpoint list.
+Admin UI: `http://localhost:8080/auth/realms/{realm}/webhooks/ui`
+
+REST API: `http://localhost:8080/auth/realms/{realm}/webhooks` (requires `view-events` / `manage-events` role)
 
 ## Architecture
 
 | Service | Description |
 |---|---|
-| `keycloak` | Keycloak 26.1 with custom event provider |
+| `keycloak` | Keycloak 26.1 with webhook provider |
 | `keycloak-db` | PostgreSQL 18 for Keycloak storage |
 | `keycloak-init` | Python one-shot container that configures realms from `seed.yml` |
+
+## Makefile
+
+```
+make up       Start the stack
+make down     Stop the stack
+make build    Rebuild and start
+make logs     Tail logs
+make ps       Show running services
+make clean    Stop and remove volumes (full reset)
+```
+
+## License
+
+MIT — Copyright (c) 2026 Francesco Montelli
+
+---
+
+Built by [Francesco Montelli](https://montelli.dev) · Part of the [Keycloak SSO Setup](https://montelli.dev/servizi/keycloak) productized service

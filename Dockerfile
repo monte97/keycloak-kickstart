@@ -2,7 +2,7 @@ FROM quay.io/keycloak/keycloak:26.1 as builder
 
 WORKDIR /opt/keycloak
 
-COPY ./provider/keycloak-webhook-provider-1.0.0-SNAPSHOT.jar /opt/keycloak/providers/
+COPY ./provider/keycloak-webhook-provider-*.jar /opt/keycloak/providers/
 
 RUN /opt/keycloak/bin/kc.sh build
 
