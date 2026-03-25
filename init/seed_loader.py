@@ -74,6 +74,28 @@ def validate_seed(seed: dict) -> None:
 
         defined_groups = {g["name"] for g in realm.get("groups", [])}
 
+        for i, wh in enumerate(realm.get("webhooks", [])):
+            if "url" not in wh or not wh["url"]:
+                raise ValueError(
+                    f"Webhook #{i+1} in realm '{realm['name']}' must have a 'url'"
+                )
+            if "events" not in wh or not wh["events"]:
+                raise ValueError(
+                    f"Webhook '{wh['url']}' in realm '{realm['name']}' must have "
+                    f"a non-empty 'events' list"
+                )
+            if "algorithm" in wh and wh["algorithm"] not in ("HmacSHA256", "HmacSHA1"):
+                raise ValueError(
+                    f"Webhook '{wh['url']}': algorithm must be HmacSHA256 or HmacSHA1"
+                )
+            for key in ("retryMaxElapsedSeconds", "retryMaxIntervalSeconds"):
+                if key in wh:
+                    val = wh[key]
+                    if not isinstance(val, (int, float)) or val < 1:
+                        raise ValueError(
+                            f"Webhook '{wh['url']}': {key} must be a positive number"
+                        )
+
         for user in realm.get("users", []):
             for role in user.get("roles", []):
                 if role not in defined_roles:

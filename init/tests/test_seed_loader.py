@@ -113,3 +113,57 @@ class TestValidateSeed:
     def test_realm_without_clients_raises(self):
         with pytest.raises(ValueError, match="clients"):
             validate_seed({"realms": [{"name": "test"}]})
+
+    def test_valid_webhook_passes(self):
+        seed = {
+            "realms": [{
+                "name": "test",
+                "clients": [{"clientId": "app"}],
+                "webhooks": [{"url": "http://sync/webhook", "events": ["access.LOGIN"]}],
+            }]
+        }
+        validate_seed(seed)
+
+    def test_webhook_missing_url_raises(self):
+        seed = {
+            "realms": [{
+                "name": "test",
+                "clients": [{"clientId": "app"}],
+                "webhooks": [{"events": ["access.LOGIN"]}],
+            }]
+        }
+        with pytest.raises(ValueError, match="url"):
+            validate_seed(seed)
+
+    def test_webhook_missing_events_raises(self):
+        seed = {
+            "realms": [{
+                "name": "test",
+                "clients": [{"clientId": "app"}],
+                "webhooks": [{"url": "http://sync/webhook"}],
+            }]
+        }
+        with pytest.raises(ValueError, match="events"):
+            validate_seed(seed)
+
+    def test_webhook_invalid_algorithm_raises(self):
+        seed = {
+            "realms": [{
+                "name": "test",
+                "clients": [{"clientId": "app"}],
+                "webhooks": [{"url": "http://sync/webhook", "events": ["access.LOGIN"], "algorithm": "MD5"}],
+            }]
+        }
+        with pytest.raises(ValueError, match="algorithm"):
+            validate_seed(seed)
+
+    def test_webhook_negative_retry_raises(self):
+        seed = {
+            "realms": [{
+                "name": "test",
+                "clients": [{"clientId": "app"}],
+                "webhooks": [{"url": "http://sync/webhook", "events": ["access.LOGIN"], "retryMaxElapsedSeconds": -1}],
+            }]
+        }
+        with pytest.raises(ValueError, match="retryMaxElapsedSeconds"):
+            validate_seed(seed)
