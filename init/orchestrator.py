@@ -117,7 +117,7 @@ def main() -> None:
 
         # 9. Webhooks
         for wh in realm.get("webhooks", []):
-            cfg.register_webhook(realm_name, wh["url"], wh["events"])
+            cfg.register_webhook(realm_name, wh)
 
         # 10. User attributes
         for attr in realm.get("user_attributes", []):

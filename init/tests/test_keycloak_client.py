@@ -168,8 +168,42 @@ class TestRegisterWebhook:
             mock_requests.post.return_value = mock_post
             mock_admin.connection.token = {"access_token": "test-token"}
 
-            cfg.register_webhook("test-realm", "http://sync:8888/webhook", ["admin.USER-DELETE"])
+            cfg.register_webhook("test-realm", {
+                "url": "http://sync:8888/webhook",
+                "events": ["admin.USER-DELETE"],
+            })
             mock_requests.post.assert_called_once()
+            post_data = mock_requests.post.call_args[1]["json"]
+            assert post_data["url"] == "http://sync:8888/webhook"
+            assert post_data["enabled"] is True
+            assert "secret" not in post_data
+
+    def test_passes_optional_fields(self, configurator):
+        cfg, mock_admin = configurator
+        from unittest.mock import patch as mock_patch
+        with mock_patch("keycloak_client.requests") as mock_requests:
+            mock_get = MagicMock()
+            mock_get.status_code = 200
+            mock_get.json.return_value = []
+            mock_post = MagicMock()
+            mock_post.status_code = 201
+            mock_requests.get.return_value = mock_get
+            mock_requests.post.return_value = mock_post
+            mock_admin.connection.token = {"access_token": "test-token"}
+
+            cfg.register_webhook("test-realm", {
+                "url": "http://sync:8888/webhook",
+                "events": ["admin.USER-DELETE"],
+                "secret": "my-secret",
+                "algorithm": "HmacSHA1",
+                "retryMaxElapsedSeconds": 1800,
+                "retryMaxIntervalSeconds": 60,
+            })
+            post_data = mock_requests.post.call_args[1]["json"]
+            assert post_data["secret"] == "my-secret"
+            assert post_data["algorithm"] == "HmacSHA1"
+            assert post_data["retryMaxElapsedSeconds"] == 1800
+            assert post_data["retryMaxIntervalSeconds"] == 60
 
     def test_skips_webhook_if_exists_same_events(self, configurator):
         cfg, mock_admin = configurator
@@ -180,12 +214,15 @@ class TestRegisterWebhook:
             mock_get.json.return_value = [{
                 "url": "http://sync:8888/webhook",
                 "eventTypes": ["admin.USER-DELETE"],
-                "enabled": "true",
+                "enabled": True,
             }]
             mock_requests.get.return_value = mock_get
             mock_admin.connection.token = {"access_token": "test-token"}
 
-            cfg.register_webhook("test-realm", "http://sync:8888/webhook", ["admin.USER-DELETE"])
+            cfg.register_webhook("test-realm", {
+                "url": "http://sync:8888/webhook",
+                "events": ["admin.USER-DELETE"],
+            })
             mock_requests.post.assert_not_called()
 
 

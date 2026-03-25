@@ -33,6 +33,10 @@ realms:
 
     webhooks:                                   # optional
       - url: "http://sync:8888/webhook"
+        # secret: "${WEBHOOK_SECRET}"           # optional — HMAC signing secret
+        # algorithm: HmacSHA256                 # optional — HmacSHA256 (default) or HmacSHA1
+        # retryMaxElapsedSeconds: 900           # optional — max total retry time (default 900)
+        # retryMaxIntervalSeconds: 180          # optional — max interval between retries (default 180)
         events:
           - admin.USER-DELETE
           - admin.CLIENT_ROLE_MAPPING-CREATE

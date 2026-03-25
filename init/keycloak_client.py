@@ -203,10 +203,12 @@ class KeycloakConfigurator:
     def _get_token(self) -> str:
         return self._admin.connection.token["access_token"]
 
-    def register_webhook(self, realm: str, url: str, events: list[str]) -> None:
+    def register_webhook(self, realm: str, webhook_config: dict) -> None:
+        url = webhook_config.get("url", "")
         if not url:
             logger.debug("Webhook URL is empty, skipping")
             return
+        events = webhook_config.get("events", [])
         self._switch_realm(realm)
         headers = {
             "Authorization": f"Bearer {self._get_token()}",
@@ -228,7 +230,10 @@ class KeycloakConfigurator:
                         logger.info("Deleted webhook '%s' to recreate with updated events", url)
                     break
 
-        data = {"enabled": "true", "url": url, "eventTypes": events}
+        data = {"enabled": True, "url": url, "eventTypes": events}
+        for key in ("secret", "algorithm", "retryMaxElapsedSeconds", "retryMaxIntervalSeconds"):
+            if key in webhook_config:
+                data[key] = webhook_config[key]
         resp = requests.post(webhook_endpoint, headers=headers, json=data, verify=False)
         if resp.status_code == 201:
             logger.info("Registered webhook '%s'", url)
