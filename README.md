@@ -36,42 +36,28 @@ This kickstart does not include a custom theme. To add one:
 
 ## Events & Webhooks
 
-The image includes two providers:
-
-- **`keycloak-events-26.0.jar`** — event listener that enables webhook notifications configured via seed file
-- **`keycloak-webhook-provider-1.0.0-SNAPSHOT.jar`** — custom SPI with REST API and embedded admin UI
-
-### Seed-based configuration
-
-Configure webhooks in your seed file (handled by `keycloak-events`):
-
-```yaml
-webhooks:
-  - url: "http://your-service/webhook"
-    events:
-      - access.LOGIN
-      - access.LOGOUT
-      - admin.USER-DELETE
-```
-
-When webhooks are defined, the init container automatically enables event listeners and admin events for the realm.
+The image includes `keycloak-webhook-provider-1.0.0-SNAPSHOT.jar`, a custom SPI provider with HMAC-signed webhook delivery, retry with exponential backoff, circuit breaker, full REST API, and an embedded admin UI.
 
 ### Admin UI
-
-The custom webhook provider includes a React admin UI served directly from the JAR:
 
 ```
 http://localhost:8080/auth/realms/{realm}/webhooks/ui
 ```
 
-The UI lets you create, edit, and delete webhooks, monitor circuit breaker state, and send test pings — no Keycloak admin console required. Authentication uses the realm's Keycloak JS adapter.
+Create, edit, and delete webhooks, monitor circuit breaker state, and send test pings — all from the browser. Authentication uses the realm's Keycloak JS adapter.
 
-The REST API is available at `http://localhost:8080/auth/realms/{realm}/webhooks` and requires `view-events` / `manage-events` realm permissions.
+### REST API
+
+```
+http://localhost:8080/auth/realms/{realm}/webhooks
+```
+
+Requires `view-events` / `manage-events` realm permissions. See `docs/PROJECT_STATUS.md` for the full endpoint list.
 
 ## Architecture
 
 | Service | Description |
 |---|---|
 | `keycloak` | Keycloak 26.1 with custom event provider |
-| `keycloak-db` | PostgreSQL 16 for Keycloak storage |
+| `keycloak-db` | PostgreSQL 18 for Keycloak storage |
 | `keycloak-init` | Python one-shot container that configures realms from `seed.yml` |
