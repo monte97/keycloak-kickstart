@@ -1,9 +1,27 @@
-.PHONY: up down restart build logs ps clean health test help
+.PHONY: up down restart build logs ps clean health test fetch-provider help
 
 KC_URL := http://localhost:$${KC_PORT:-8080}/auth
+PROVIDER_DIR := ./provider
+WEBHOOK_REPO := monte97/keycloak-webhook-provider
 
-## up         Start the stack
-up:
+## fetch-provider  Download latest keycloak-webhook-provider JAR from GitHub
+fetch-provider:
+	@echo ">>> Fetching latest keycloak-webhook-provider release..."
+	@RELEASE=$$(curl -sf https://api.github.com/repos/$(WEBHOOK_REPO)/releases/latest | grep '"tag_name"' | cut -d'"' -f4); \
+	VERSION=$${RELEASE#v}; \
+	JAR="keycloak-webhook-provider-$${VERSION}.jar"; \
+	if [ -f "$(PROVIDER_DIR)/$$JAR" ]; then \
+		echo "  Already up to date: $$JAR"; \
+	else \
+		echo "  Downloading $$JAR..."; \
+		rm -f $(PROVIDER_DIR)/keycloak-webhook-provider-*.jar; \
+		curl -fL "https://github.com/$(WEBHOOK_REPO)/releases/download/$$RELEASE/$$JAR" \
+			-o "$(PROVIDER_DIR)/$$JAR"; \
+		echo "  Done: $$JAR"; \
+	fi
+
+## up         Start the stack (downloads latest provider if needed)
+up: fetch-provider
 	docker compose up -d
 
 ## down       Stop the stack

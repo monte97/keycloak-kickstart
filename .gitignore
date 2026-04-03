@@ -1,3 +1,6 @@
+# Provider JAR (downloaded automatically via make fetch-provider)
+provider/*.jar
+
 # Environment
 .env
 seed.yml
